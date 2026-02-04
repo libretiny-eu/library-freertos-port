@@ -446,6 +446,40 @@ void rtos_stack_overflow(char *taskname)
 	while(1);
 }
 
+#if defined(CFG_BDK_VERSION) && CFG_BDK_VERSION >= 30045
+uint8_t preempt_delayed_schedule_check(void)
+{
+	uint32_t previous_mode;
+	uint8_t ret = 0;
+	GLOBAL_INT_DECLARATION();
+
+	GLOBAL_INT_DISABLE();
+	previous_mode = platform_spsr_content() & ARM968_MODE_MASK;
+	if (ARM_MODE_SYS != previous_mode) {
+		g_preempt_delayed_schedule_flag = 1;
+		ret = 1;
+	}
+	GLOBAL_INT_RESTORE();
+
+	return ret;
+}
+
+void preempt_delayed_schedule_handler(void)
+{
+	uint32_t previous_mode;
+	GLOBAL_INT_DECLARATION();
+
+	GLOBAL_INT_DISABLE();
+	previous_mode = platform_spsr_content() & ARM968_MODE_MASK;
+	if(g_preempt_delayed_schedule_flag
+		&& (ARM_MODE_SYS == previous_mode)) {
+		g_preempt_delayed_schedule_flag = 0;
+		vTaskSwitchContext();
+	}
+
+	GLOBAL_INT_RESTORE();
+}
+#else
 void preempt_delayed_schedule_set_flag(void)
 {
 	os_null_printf("preempt_delayed_schedule_set_flag\r\n");
@@ -483,6 +517,7 @@ uint32_t preempt_delayed_schedule_handler(void)
 
 	return hit;
 }
+#endif
 
 #ifdef CONTROL_IRQ_WITH_NORMAL_FUNCTION
 /*

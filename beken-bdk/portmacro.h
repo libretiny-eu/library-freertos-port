@@ -350,9 +350,14 @@ void vTaskForceAwake( void* xTask ) PRIVILEGED_FUNCTION;
 
 uint32_t xTimerGetNextExpireTime(void);
 uint32_t xTimerGetCurrentTimerCount(void);
-extern uint32_t preempt_delayed_schedule_handler(void);
 extern int bk_wlan_mcu_suppress_and_sleep(unsigned int );
 void *pvPortRealloc( void *pv, size_t size ) PRIVILEGED_FUNCTION;
+
+#if defined(CFG_BDK_VERSION) && CFG_BDK_VERSION >= 30045
+extern uint8_t preempt_delayed_schedule_check(void);
+#else
+extern uint32_t preempt_delayed_schedule_handler(void);
+#endif
 
 __inline static uint32_t port_interrupt_mask_from_isr(void)
 {
